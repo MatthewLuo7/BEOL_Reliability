@@ -1,0 +1,9 @@
+*.log
+**/logs/
+**/log/
+
+**/temp/
+
+**/exp/
+
+**/__pycache__
