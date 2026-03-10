@@ -27,7 +27,6 @@ if __name__ == "__main__":
 	parser.add_argument('--show', action='store_true', help='Show the density diagram')
 	parser.add_argument('--save-path', type=str, default=None, help='Path to save the results')
 	args = parser.parse_args()
-	args.dataset = 'ImageNet'
 	print(args)
 
 	# # ------------- single simulation -------------
