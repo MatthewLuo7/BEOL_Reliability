@@ -1,5 +1,5 @@
 import argparse
-from src.percolation.planar_capacitor import PlanarCapSim_create_wrapper
+from src.percolation.planar_capacitor import PlanarCapSim, PlanarCapSim_create_wrapper
 from src.percolation.mc_simulation import mc_simulate
 import json
 import pathlib
@@ -26,16 +26,19 @@ if __name__ == "__main__":
 
 	parser.add_argument('--show', action='store_true', help='Show the density diagram')
 	parser.add_argument('--save-path', type=str, default=None, help='Path to save the results')
+	parser.add_argument('--single-sim', action='store_true', help='Just run a single simulation')
 	args = parser.parse_args()
 	print(args)
 
 	# # ------------- single simulation -------------
-	# sim = PlanarCapSim()
-	# sim.simulate()
-	# is_broken, defect_num, defect_volume_norm = sim.get_sim_results()
-	# print(f'Breakdown: {is_broken}')
-	# print(f'Defects at Breakdown: {defect_num}')
-	# print(f'Normalized Defect Volume: {defect_volume_norm*100:.2f} %')
+	if args.single_sim:
+		sim = PlanarCapSim()
+		sim.simulate()
+		is_broken, defect_num, defect_volume_norm = sim.get_sim_results()
+		print(f'Breakdown: {is_broken}')
+		print(f'Defects at Breakdown: {defect_num}')
+		print(f'Normalized Defect Volume: {defect_volume_norm*100:.2f} %')
+		exit(0)
 
 	dimx = args.dimx
 	dimy = args.dimy
@@ -61,6 +64,7 @@ if __name__ == "__main__":
 					rebuild_thresh=rebuild_thresh,
 					workers=workers,
 					vol_est_samples=vol_est_samples)
+	sim_volume = dimx*dimy*dimz
 
 	results = mc_simulate(sim_wrapper=sim_wrapper,
 						  sample_num=sample_num,
@@ -70,11 +74,19 @@ if __name__ == "__main__":
 	break_np, defect_np, volume_np = results
 
 	mask = (break_np == True)
-	fig, ax = plt.subplots(figsize=(8, 5))
+
+	fig1, ax = plt.subplots(figsize=(8, 5))
 	ax.hist(volume_np[mask], bins=200, density=True)
 	ax.grid()
 	ax.set_ylabel('Probability Density')
-	ax.set_xlabel('Normalized Defect Density')
+	ax.set_xlabel('Normalized Defect Volume')
+	ax.set_title(f'x={dimx:.2f}; y={dimy:.2f}; z={dimz:.2f}; r={radius:.2f}')
+
+	fig2, ax = plt.subplots(figsize=(8, 5))
+	ax.hist(defect_np[mask]/sim_volume, bins=200, density=True)
+	ax.grid()
+	ax.set_ylabel('Probability Density')
+	ax.set_xlabel('Defect Density')
 	ax.set_title(f'x={dimx:.2f}; y={dimy:.2f}; z={dimz:.2f}; r={radius:.2f}')
 
 	if args.save_path is not None:
@@ -83,7 +95,8 @@ if __name__ == "__main__":
 		if not save_path.is_dir(): save_path.mkdir()
 
 		# save picture
-		plt.savefig(save_path / "distribution.png")
+		fig1.savefig(save_path / "norm_defect_vol.png")
+		fig2.savefig(save_path / "defect_density.png")
 
 		# save data
 		np.save(save_path / "break_flag.npy", break_np)
@@ -97,3 +110,6 @@ if __name__ == "__main__":
 			json.dump(info_dict, f, indent=4)
 
 	if args.show: plt.show()	
+
+	plt.close(fig1)
+	plt.close(fig2)
