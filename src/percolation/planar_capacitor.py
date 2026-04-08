@@ -95,11 +95,15 @@ class PlanarCapSim:
 	def is_broken(self) -> bool:
 		return self.defect_conn.is_connected()
 
-	def simulate(self, vol_est_samples:int=500000, workers:int=1):
+	def simulate(self, workers:int=1):
 		self.reset()
 		
 		for cur_idx in range(self.max_defects):
 			p = self.get_sample()
+
+			# if the p is None, exit for loop
+			if p is None:
+				break
 
 			neighbors = self.find_neighbors(p=p, workers=workers)
 			self.union_defects(p=p, cur_idx=cur_idx, neighbors=neighbors)
@@ -112,22 +116,45 @@ class PlanarCapSim:
 
 		self.is_simulated = True
 		self.build_tree()
-		self.estimate_defect_volume(samples=vol_est_samples, workers=workers)
 
-	def estimate_defect_volume(self, samples:int=500000, workers:int=1):
-		assert self.is_simulated, "Error: need to run simulaiton first."
-		assert samples > 0
-		v_mc_pts = self.rng.uniform(low=[0., 0., 0.],
-									high=[self.dimx, self.dimy, self.dimz],
-									size=(samples, 3))
-
-		dist, _ = self.tree.query(x=v_mc_pts, k=1, workers=workers)
-		inside_samples = dist < self.radius
-		self.defect_volume_norm = inside_samples.mean()
-
-	def get_sim_results(self) -> (bool, int, float):
+	def get_sim_results(self) -> (bool, int, [float]):
 		assert self.is_simulated
-		return self.is_broken(), self.defect_num, self.defect_volume_norm
+		return self.is_broken(), self.defect_num, self.tree_points
+
+	# --------------------- previously simulate volume -------------------
+	# def simulate(self, vol_est_samples:int=500000, workers:int=1):
+	# 	self.reset()
+		
+	# 	for cur_idx in range(self.max_defects):
+	# 		p = self.get_sample()
+
+	# 		neighbors = self.find_neighbors(p=p, workers=workers)
+	# 		self.union_defects(p=p, cur_idx=cur_idx, neighbors=neighbors)
+	# 		self.insert_tree_point(p=p)
+
+	# 		self.defect_num += 1
+
+	# 		if self.is_broken():
+	# 			break
+
+	# 	self.is_simulated = True
+	# 	self.build_tree()
+	# 	self.estimate_defect_volume(samples=vol_est_samples, workers=workers)
+
+	# def estimate_defect_volume(self, samples:int=500000, workers:int=1):
+	# 	assert self.is_simulated, "Error: need to run simulaiton first."
+	# 	assert samples > 0
+	# 	v_mc_pts = self.rng.uniform(low=[0., 0., 0.],
+	# 								high=[self.dimx, self.dimy, self.dimz],
+	# 								size=(samples, 3))
+
+	# 	dist, _ = self.tree.query(x=v_mc_pts, k=1, workers=workers)
+	# 	inside_samples = dist < self.radius
+	# 	self.defect_volume_norm = inside_samples.mean()
+
+	# def get_sim_results(self) -> (bool, int, float):
+	# 	assert self.is_simulated
+	# 	return self.is_broken(), self.defect_num, self.defect_volume_norm
 
 
 def PlanarCapSim_simulation(seed:int,
@@ -137,8 +164,7 @@ def PlanarCapSim_simulation(seed:int,
 							radius:float=0.45,
 							max_defects:int=10000,
 							rebuild_thresh:int=50,
-							workers:int=1,
-							vol_est_samples:int=500000)\
+							workers:int=1)\
 							-> (bool, int, float):
 	sim = PlanarCapSim(dimx=dimx,
 					   dimy=dimy,
@@ -147,8 +173,7 @@ def PlanarCapSim_simulation(seed:int,
 					   max_defects=max_defects,
 					   rebuild_thresh=rebuild_thresh,
 					   seed=seed)
-	sim.simulate(vol_est_samples=vol_est_samples,
-				 workers=workers)
+	sim.simulate(workers=workers)
 	return sim.get_sim_results()
 
 def PlanarCapSim_create_wrapper(dimx:float=30,
@@ -157,8 +182,7 @@ def PlanarCapSim_create_wrapper(dimx:float=30,
 								radius:float=0.45,
 								max_defects:int=10000,
 								rebuild_thresh:int=50,
-								workers:int=1,
-								vol_est_samples:int=500000)\
+								workers:int=1)\
 								-> functools.partial:
 	return functools.partial(PlanarCapSim_simulation,
 							 dimx=dimx,
@@ -167,8 +191,7 @@ def PlanarCapSim_create_wrapper(dimx:float=30,
 							 radius=radius,
 							 max_defects=max_defects,
 							 rebuild_thresh=rebuild_thresh,
-							 workers=workers,
-							 vol_est_samples=vol_est_samples)
+							 workers=workers)
 
 
 
