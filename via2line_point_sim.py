@@ -23,7 +23,6 @@ if __name__ == "__main__":
 	parser.add_argument('--chunk-size', type=int, default=16, help='Chunk size of simulations')
 	parser.add_argument('--cpu-num', type=int, default=-1, help='The number of CPUs')
 
-	parser.add_argument('--show', action='store_true', help='Show the density diagram')
 	parser.add_argument('--save-path', type=str, default=None, help='Path to save the results')
 	parser.add_argument('--single-sim', action='store_true', help='Just run a single simulation')
 	args = parser.parse_args()

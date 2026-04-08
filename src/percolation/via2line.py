@@ -29,7 +29,7 @@ class Via2LineSim(PlanarCapSim):
 				 rebuild_thresh:int=50,
 				 seed:int=42) -> None:
 
-		assert vm_offset > 0.
+		assert vm_offset >= 0.
 		assert ll_space > 0.
 		assert via_dim_x > 0.
 		assert via_dim_y > 0.
