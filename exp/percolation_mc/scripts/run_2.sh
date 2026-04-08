@@ -1,0 +1,15 @@
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z  2.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z  4.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z  6.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z  8.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 10.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 12.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 14.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 16.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 18.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 20.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 22.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 24.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 26.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 28.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
+python ./percolation_mc_sim.py -x 30.0 -y 30.0 -z 30.0 -r 0.45 --randseq-entropy 1234 --cpu-num 64 --save-path ./exp/percolation_mc/gen_data/run_1_run2
