@@ -121,6 +121,32 @@ class PlanarCapSim:
 		assert self.is_simulated
 		return self.is_broken(), self.defect_num, self.tree_points
 
+	def restore_simulation(self, defect_points:np.ndarray, workers:int=1) -> None:
+		self.reset()
+
+		for cur_idx, p in enumerate(defect_points):
+			if p is None:
+				raise ValueError("Encounter None in defect_points")
+
+			neighbors = self.find_neighbors(p=p, workers=workers)
+			self.union_defects(p=p, cur_idx=cur_idx, neighbors=neighbors)
+			self.insert_tree_point(p=p)
+			self.defect_num += 1
+
+		self.is_simulated = True
+		self.build_tree()
+		assert self.is_broken, "Cannot detect a breakdown in the restored simulation."
+
+	def retrieve_percolation_path(self, defect_points:np.ndarray, workers:int=1) -> np.ndarray:
+		self.restore_simulation(defect_points=defect_points, workers=workers)
+		percolation_nodes = []
+		for idx, p in enumerate(defect_points):
+			if self.defect_conn.is_a_percolation_node(idx):
+				percolation_nodes.append(p)
+		assert len(percolation_nodes) > 0
+		return np.array(percolation_nodes)
+		
+
 	# --------------------- previously simulate volume -------------------
 	# def simulate(self, vol_est_samples:int=500000, workers:int=1):
 	# 	self.reset()
@@ -193,7 +219,23 @@ def PlanarCapSim_create_wrapper(dimx:float=30,
 							 rebuild_thresh=rebuild_thresh,
 							 workers=workers)
 
-
-
-if __name__ == "__main__":
-	pass
+def PlanarCapSim_retrieve_percolation_path(
+		defect_points:np.ndarray,
+		dimx:float=30,
+		dimy:float=30,
+		dimz:float=10,
+		radius:float=0.45,
+		max_defects:int=10000,
+		rebuild_thresh:int=50,
+		workers:int=1,
+		seed:int=0) -> np.ndarray:
+	sim = PlanarCapSim(dimx=dimx,
+					   dimy=dimy,
+					   dimz=dimz,
+					   radius=radius,
+					   max_defects=max_defects,
+					   rebuild_thresh=rebuild_thresh,
+					   seed=seed)
+	return sim.retrieve_percolation_path(
+				defect_points=defect_points,
+				workers=workers)

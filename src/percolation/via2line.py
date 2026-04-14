@@ -169,3 +169,33 @@ def Via2LineSim_create_wrapper(vm_offset:float,				# via misalignment, along the
 							 max_defects=max_defects,
 							 rebuild_thresh=rebuild_thresh,
 							 workers=workers)
+
+
+def Via2LineSim_retrieve_percolation_path(
+		defect_points:np.ndarray,
+		vm_offset:float,
+		ll_space:float=10.5,
+		via_dim_x:float=10.5,
+		via_dim_y:float=10.5,
+		via_dim_z:float=10.5*2,
+		line_dim_y:float=10.5*2,
+		line_dim_z:float=10.5*2,
+		radius:float=0.45,
+		max_defects:int=10000,
+		rebuild_thresh:int=50,
+		workers:int=1,
+		seed:int=0) -> np.ndarray:
+	sim = Via2LineSim(vm_offset=vm_offset,
+					  ll_space=ll_space,
+					  via_dim_x=via_dim_x,	
+					  via_dim_y=via_dim_y,	
+					  via_dim_z=via_dim_z,
+					  line_dim_y=line_dim_y,
+					  line_dim_z=line_dim_z,
+					  radius=radius,
+					  max_defects=max_defects,
+					  rebuild_thresh=rebuild_thresh,
+					  seed=seed)
+	return sim.retrieve_percolation_path(
+				defect_points=defect_points,
+				workers=workers)

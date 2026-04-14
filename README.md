@@ -8,3 +8,6 @@ Introducation
 - conda install conda-forge::scipy
 - conda install conda-forge::tqdm
 - conda install conda-forge::matplotlib
+
+- conda install conda-forge::pyvista
+- pip install "pyvista[jupyter]"

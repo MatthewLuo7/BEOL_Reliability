@@ -119,5 +119,9 @@ class DefectConnect(UnionFind):
 		"""
 		self.parent = {}
 
+	def is_a_percolation_node(self, x:int) -> bool:
+		assert self.is_connected()
+		return self.find(self._ANODE) == self.find(x)
+
 if __name__ == "__main__":
 	pass
