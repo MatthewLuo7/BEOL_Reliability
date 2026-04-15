@@ -202,7 +202,7 @@ def Via2LineSim_retrieve_percolation_path(
 
 def Via2LineSim_sumup_time_intervals(
 		defect_points:np.ndarray,
-		m:float,
+		m_np:np.ndarray,
 		radius_N:float,
 		vm_offset:float,
 		ll_space:float=10.5,
@@ -216,7 +216,7 @@ def Via2LineSim_sumup_time_intervals(
 		rebuild_thresh:int=50,
 		workers:int=1,
 		seed:int=0,
-		verify:bool=False) -> float:
+		verify:bool=False) -> np.ndarray:
 	sim = Via2LineSim(vm_offset=vm_offset,
 					  ll_space=ll_space,
 					  via_dim_x=via_dim_x,	
@@ -229,13 +229,13 @@ def Via2LineSim_sumup_time_intervals(
 					  rebuild_thresh=rebuild_thresh,
 					  seed=seed)
 	return sim.sumup_time_intervals(
-				m=m,\
+				m_np=m_np,\
 				radius_N=radius_N,\
 				defect_points=defect_points,\
 				workers=workers, verify=verify)
 
 def Via2LineSim_sumup_time_intervals_create_wrapper(
-		m:float,
+		m_np:np.ndarray,
 		radius_N:float,
 		vm_offset:float,
 		ll_space:float=10.5,
@@ -251,7 +251,7 @@ def Via2LineSim_sumup_time_intervals_create_wrapper(
 		seed:int=0,
 		verify:bool=False) -> functools.partial:
 	return functools.partial(Via2LineSim_sumup_time_intervals,
-							 m=m,
+							 m_np=m_np,
 							 radius_N=radius_N,
 							 vm_offset=vm_offset,
 							 ll_space=ll_space,

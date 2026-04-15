@@ -147,16 +147,16 @@ class PlanarCapSim:
 		assert len(percolation_nodes) > 0
 		return np.array(percolation_nodes)
 
-	def sumup_time_intervals(self, m:float, radius_N:float,\
+	def sumup_time_intervals(self, m_np:np.ndarray, radius_N:float,\
 							 defect_points:np.ndarray,\
-							 workers:int=1, verify:bool=False) -> float:
-		assert m > 1.
+							 workers:int=1, verify:bool=False) -> np.ndarray:
+		assert m_np.min().item() > 1.
 		assert radius_N > self.radius
-		m_rcp = 1. / m
+		m_rcp = 1. / m_np
 		V_N = math.pi * (radius_N**2)
 		t_init = (1 / V_N) ** m_rcp
 		m_itv = m_rcp - 1.
-		def get_time_interval(N_N:int) -> float:
+		def get_time_interval(N_N:int) -> np.ndarray:
 			assert N_N >= 0
 			if N_N == 0:
 				return t_init
@@ -168,12 +168,16 @@ class PlanarCapSim:
 
 		self.reset()
 
-		time_sum = 0.
+		time_sum = None
 		for cur_idx, p in enumerate(defect_points):
 			if p is None:
 				raise ValueError("Encounter None in defect_points")
 
-			time_sum += get_time_interval(get_N_N(p=p))
+			if time_sum is None:
+				time_sum = get_time_interval(get_N_N(p=p))
+			else:
+				time_sum += get_time_interval(get_N_N(p=p))
+
 			if verify:
 				neighbors = self.find_neighbors(p=p, workers=workers)
 				self.union_defects(p=p, cur_idx=cur_idx, neighbors=neighbors)
@@ -282,7 +286,7 @@ def PlanarCapSim_retrieve_percolation_path(
 				workers=workers)
 
 def PlanarCapSim_sumup_time_intervals(
-		m:float,
+		m_np:np.ndarray,
 		radius_N:float,
 		defect_points:np.ndarray,
 		dimx:float=30,
@@ -293,7 +297,7 @@ def PlanarCapSim_sumup_time_intervals(
 		rebuild_thresh:int=50,
 		workers:int=1,
 		seed:int=0,
-		verify:bool=False) -> float:
+		verify:bool=False) -> np.ndarray:
 	sim = PlanarCapSim(dimx=dimx,
 					   dimy=dimy,
 					   dimz=dimz,
@@ -302,7 +306,7 @@ def PlanarCapSim_sumup_time_intervals(
 					   rebuild_thresh=rebuild_thresh,
 					   seed=seed)
 	return sim.sumup_time_intervals(
-							 m=m,\
+							 m_np=m_np,\
 							 radius_N=radius_N,\
 							 defect_points=defect_points,\
 							 workers=workers, verify=verify)
