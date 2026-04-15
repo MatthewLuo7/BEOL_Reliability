@@ -6,7 +6,7 @@ from src.percolation.via2line import Via2LineSim_retrieve_percolation_path
 
 data_root = pathlib.Path('./exp/percolation_points/gen_data/via2line/')
 
-from plot_line2line import plot_sphere
+from exp.percolation_points.plot_line2line import plot_sphere
 
 def rendering(args, seed:int):
 	rng = np.random.default_rng(seed=seed)

@@ -1,3 +1,4 @@
+import math
 import numpy as np
 import functools
 from scipy.spatial import cKDTree
@@ -145,6 +146,46 @@ class PlanarCapSim:
 				percolation_nodes.append(p)
 		assert len(percolation_nodes) > 0
 		return np.array(percolation_nodes)
+
+	def sum_time_interval(self, m:float, radius_N:float,\
+						  defect_points:np.ndarray,\
+						  workers:int=1, verify:bool=False) -> float:
+		assert m > 1.
+		assert radius_N > self.radius
+		m_rcp = 1. / m
+		V_N = math.pi * (radius_N**2)
+		t_init = (1 / V_N) ** m_rcp
+		m_itv = m_rcp - 1.
+		def get_time_interval(N_N:int) -> float:
+			assert N_N >= 0
+			if N_N == 0:
+				return t_init
+			else:
+				return m_rcp * ((N_N / V_N) ** m_itv)
+
+		def get_N_N(p:np.ndarray) -> int:
+			return len(self._find_neighbors(p=p, distance=radius_N, workers=workers))
+
+		self.reset()
+
+		time_sum = 0.
+		for cur_idx, p in enumerate(defect_points):
+			if p is None:
+				raise ValueError("Encounter None in defect_points")
+
+			time_sum += get_time_interval(get_N_N(p=p))
+			if verify:
+				neighbors = self.find_neighbors(p=p, workers=workers)
+				self.union_defects(p=p, cur_idx=cur_idx, neighbors=neighbors)
+			self.insert_tree_point(p=p)
+			self.defect_num += 1
+
+		if verify:
+			self.is_simulated = True
+			self.build_tree()
+			assert self.is_broken, "Cannot detect a breakdown in the restored simulation."
+
+		return time_sum
 		
 
 	# --------------------- previously simulate volume -------------------
