@@ -147,9 +147,9 @@ class PlanarCapSim:
 		assert len(percolation_nodes) > 0
 		return np.array(percolation_nodes)
 
-	def sum_time_interval(self, m:float, radius_N:float,\
-						  defect_points:np.ndarray,\
-						  workers:int=1, verify:bool=False) -> float:
+	def sumup_time_intervals(self, m:float, radius_N:float,\
+							 defect_points:np.ndarray,\
+							 workers:int=1, verify:bool=False) -> float:
 		assert m > 1.
 		assert radius_N > self.radius
 		m_rcp = 1. / m
@@ -280,3 +280,29 @@ def PlanarCapSim_retrieve_percolation_path(
 	return sim.retrieve_percolation_path(
 				defect_points=defect_points,
 				workers=workers)
+
+def PlanarCapSim_sumup_time_intervals(
+		m:float,
+		radius_N:float,
+		defect_points:np.ndarray,
+		dimx:float=30,
+		dimy:float=30,
+		dimz:float=10,
+		radius:float=0.45,
+		max_defects:int=10000,
+		rebuild_thresh:int=50,
+		workers:int=1,
+		seed:int=0,
+		verify:bool=False) -> float:
+	sim = PlanarCapSim(dimx=dimx,
+					   dimy=dimy,
+					   dimz=dimz,
+					   radius=radius,
+					   max_defects=max_defects,
+					   rebuild_thresh=rebuild_thresh,
+					   seed=seed)
+	return sim.sumup_time_intervals(
+							 m=m,\
+							 radius_N=radius_N,\
+							 defect_points=defect_points,\
+							 workers=workers, verify=verify)

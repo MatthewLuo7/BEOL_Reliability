@@ -199,3 +199,70 @@ def Via2LineSim_retrieve_percolation_path(
 	return sim.retrieve_percolation_path(
 				defect_points=defect_points,
 				workers=workers)
+
+def Via2LineSim_sumup_time_intervals(
+		defect_points:np.ndarray,
+		m:float,
+		radius_N:float,
+		vm_offset:float,
+		ll_space:float=10.5,
+		via_dim_x:float=10.5,
+		via_dim_y:float=10.5,
+		via_dim_z:float=10.5*2,
+		line_dim_y:float=10.5*2,
+		line_dim_z:float=10.5*2,
+		radius:float=0.45,
+		max_defects:int=10000,
+		rebuild_thresh:int=50,
+		workers:int=1,
+		seed:int=0,
+		verify:bool=False) -> float:
+	sim = Via2LineSim(vm_offset=vm_offset,
+					  ll_space=ll_space,
+					  via_dim_x=via_dim_x,	
+					  via_dim_y=via_dim_y,	
+					  via_dim_z=via_dim_z,
+					  line_dim_y=line_dim_y,
+					  line_dim_z=line_dim_z,
+					  radius=radius,
+					  max_defects=max_defects,
+					  rebuild_thresh=rebuild_thresh,
+					  seed=seed)
+	return sim.sumup_time_intervals(
+				m=m,\
+				radius_N=radius_N,\
+				defect_points=defect_points,\
+				workers=workers, verify=verify)
+
+def Via2LineSim_sumup_time_intervals_create_wrapper(
+		m:float,
+		radius_N:float,
+		vm_offset:float,
+		ll_space:float=10.5,
+		via_dim_x:float=10.5,
+		via_dim_y:float=10.5,
+		via_dim_z:float=10.5*2,
+		line_dim_y:float=10.5*2,
+		line_dim_z:float=10.5*2,
+		radius:float=0.45,
+		max_defects:int=10000,
+		rebuild_thresh:int=50,
+		workers:int=1,
+		seed:int=0,
+		verify:bool=False) -> functools.partial:
+	return functools.partial(Via2LineSim_sumup_time_intervals,
+							 m=m,
+							 radius_N=radius_N,
+							 vm_offset=vm_offset,
+							 ll_space=ll_space,
+							 via_dim_x=via_dim_x,	
+							 via_dim_y=via_dim_y,	
+							 via_dim_z=via_dim_z,
+							 line_dim_y=line_dim_y,
+							 line_dim_z=line_dim_z,
+							 radius=radius,
+							 max_defects=max_defects,
+							 rebuild_thresh=rebuild_thresh,
+							 workers=workers,
+							 seed=seed,
+							 verify=verify)

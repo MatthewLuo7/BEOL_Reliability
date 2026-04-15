@@ -13,9 +13,7 @@ def plot_sphere(plotter, points:np.ndarray, radius:float, color:str='grey', opac
 		sphere = pv.Sphere(radius=radius, center=p)
 		plotter.add_mesh(sphere, color=color, opacity=opacity)
 
-def rendering(args, seed:int):
-	rng = np.random.default_rng(seed=seed)
-
+def load_sim_data(args):
 	dimx = args.dimx
 	dimy = args.dimy
 	dimz = args.dimz
@@ -30,16 +28,16 @@ def rendering(args, seed:int):
 
 	break_flag = np.load(data_dir / "break_flag.npy")
 	defect_num = np.load(data_dir / "defect_num.npy")
-	points = np.load(data_dir / "points.npy")
+	sim_points = np.load(data_dir / "points.npy")
 
 	sucs_break_sims = break_flag.sum().item()
 	if args.verbose: print(f'Simulations with successful breakdown: {sucs_break_sims} / {break_flag.shape[0]}')
 	assert sucs_break_sims > 0
 	all_defect_num = defect_num.sum().item()
-	if all_defect_num == points.shape[0]:
-		if args.verbose: print(f"Number of defects is consistent: {all_defect_num} / {points.shape[0]}")
+	if all_defect_num == sim_points.shape[0]:
+		if args.verbose: print(f"Number of defects is consistent: {all_defect_num} / {sim_points.shape[0]}")
 	else:
-		if args.verbose: print(f"Warning! Number of defects is not consistent: {all_defect_num} / {points.shape[0]}")
+		if args.verbose: print(f"Warning! Number of defects is not consistent: {all_defect_num} / {sim_points.shape[0]}")
 
 	point_start = 0
 	sucs_sim_idxs = []
@@ -47,11 +45,26 @@ def rendering(args, seed:int):
 	for idx in range(break_flag.shape[0]):
 		if break_flag[idx]:
 			sucs_sim_idxs.append(idx)
-			sucs_sim_points.append(points[point_start:point_start+defect_num[idx], :])
+			sucs_sim_points.append(sim_points[point_start:point_start+defect_num[idx], :])
 		point_start += defect_num[idx]
 
 	assert point_start == all_defect_num
 
+	return break_flag, defect_num, sim_points, sucs_sim_idxs, sucs_sim_points
+
+def rendering(args, seed:int):
+	rng = np.random.default_rng(seed=seed)
+
+	dimx = args.dimx
+	dimy = args.dimy
+	dimz = args.dimz
+	radius = args.radius
+
+	max_defects = args.max_defects
+	rebuild_thresh = args.rebuild_thresh
+	workers = 1
+
+	break_flag, defect_num, sim_points, sucs_sim_idxs, sucs_sim_points = load_sim_data(args=args)
 
 	# random plot
 	rand_sucs_idx = rng.integers(len(sucs_sim_idxs))
@@ -69,7 +82,8 @@ def rendering(args, seed:int):
 						radius=radius,
 						max_defects=max_defects,
 						rebuild_thresh=rebuild_thresh,
-						workers=workers)
+						workers=workers,
+						seed=seed)
 
 	total_defect_num = points.shape[0]
 	perco_defect_num = perco_points.shape[0]
