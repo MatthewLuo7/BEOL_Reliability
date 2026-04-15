@@ -16,7 +16,7 @@ if __name__ == "__main__":
 	parser.add_argument('--max-defects', type=int, default=100000, help='The max allowed defects')
 	parser.add_argument('--rebuild-thresh', type=int, default=50, help='Iteration interval to rebuild KD-Tree')
 	parser.add_argument('--randseq-entropy', type=int, default=1234, help='The entropy to generate random seed sequence')
-	parser.add_argument('--chunk-size', type=int, default=16, help='Chunk size of simulations')
+	parser.add_argument('--chunk-size', type=int, default=4, help='Chunk size of simulations')
 	parser.add_argument('--cpu-num', type=int, default=-1, help='The number of CPUs')
 
 	parser.add_argument('--save-path', type=str, default=None, help='Path to save the results')
