@@ -104,7 +104,7 @@ class Via2LineSim(PlanarCapSim):
 		flag = False
 		for _ in range(max_try):
 			point = self.rng.uniform(low=[0., 0., 0.],
-					high=[self.via_dim_x*2+self.ll_space, self.line_dim_y, self.line_dim_z])
+					high=[self.via_dim_x*2+self.ll_space, self.line_dim_y, self.line_dim_z+self.via_dim_z])
 
 			# if find a valid point (not within the cuboids)
 			if (get_closest_cuboid_distance(point, self.line_a_dims) > 0.) and\
