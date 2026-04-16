@@ -90,7 +90,7 @@ if __name__ == "__main__":
 	sucs_defect_num = [defect_num[idx] for idx in sucs_sim_idxs]
 	sucs_defect_density = np.array(sucs_defect_num).astype(np.float32) / V
 	pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
-					m_np=np.array(m_list),
+					m_np=np.array(m_list).astype(np.float64),
 					radius_N=radius_N,
 					vm_offset=vm_offset,
 					ll_space=ll_space,
@@ -110,6 +110,8 @@ if __name__ == "__main__":
 										  cpu_num=args.cpu_num)
 	m_num = len(m_list)
 	sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
+
+	tmp = np.array(m_list).astype(np.float64)
 
 	if not save_root.exists():
 		save_root.mkdir()

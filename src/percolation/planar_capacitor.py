@@ -150,18 +150,18 @@ class PlanarCapSim:
 	def sumup_time_intervals(self, m_np:np.ndarray, radius_N:float,\
 							 defect_points:np.ndarray,\
 							 workers:int=1, verify:bool=False) -> np.ndarray:
-		assert m_np.min().item() > 1.
+		assert m_np.min().item() >= 1.
 		assert radius_N > self.radius
 		m_rcp = 1. / m_np
 		V_N = math.pi * (radius_N**2)
-		t_init = (1 / V_N) ** m_rcp
+		t_init = np.power((1 / V_N), m_rcp) 					# (1 / V_N) ** m_rcp
 		m_itv = m_rcp - 1.
 		def get_time_interval(N_N:int) -> np.ndarray:
 			assert N_N >= 0
 			if N_N == 0:
 				return t_init
 			else:
-				return m_rcp * ((N_N / V_N) ** m_itv)
+				return m_rcp * np.power((N_N / V_N), m_itv)		# (N_N / V_N) ** m_itv
 
 		def get_N_N(p:np.ndarray) -> int:
 			return len(self._find_neighbors(p=p, distance=radius_N, workers=workers))
@@ -174,7 +174,9 @@ class PlanarCapSim:
 				raise ValueError("Encounter None in defect_points")
 
 			if time_sum is None:
-				time_sum = get_time_interval(get_N_N(p=p))
+				time_itv = get_time_interval(get_N_N(p=p))
+				time_sum = np.zeros_like(time_itv)
+				time_sum += get_time_interval(get_N_N(p=p))
 			else:
 				time_sum += get_time_interval(get_N_N(p=p))
 
