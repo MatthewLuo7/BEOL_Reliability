@@ -18,8 +18,6 @@ def load_sim_data(args):
 	line_dim_z = args.line_dim_z
 	radius = args.radius
 
-	max_defects = args.max_defects
-	rebuild_thresh = args.rebuild_thresh
 	workers = 1
 
 	dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vx{via_dim_x:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'

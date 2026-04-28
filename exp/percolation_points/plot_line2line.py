@@ -19,8 +19,6 @@ def load_sim_data(args):
 	dimz = args.dimz
 	radius = args.radius
 
-	max_defects = args.max_defects
-	rebuild_thresh = args.rebuild_thresh
 	workers = 1
 
 	dir_name = f'x{dimx:.2f}_y{dimy:.2f}_z{dimz:.2f}_r{radius:.2f}'

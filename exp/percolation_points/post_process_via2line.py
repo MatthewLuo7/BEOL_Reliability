@@ -20,18 +20,22 @@ save_root = pathlib.Path('./exp/percolation_points/gen_data/via2line_pp/')
 def mp_post_process(pp_wrapper:functools.partial,
 					sim_points:[np.ndarray],
 					chunk_size:int=4,
-					cpu_num:int=-1) -> np.ndarray:
+					cpu_num:int=-1,
+					show_progress:bool=False) -> np.ndarray:
 	cpu_num = multiprocessing.cpu_count() if cpu_num <= 0 else cpu_num
 
 	try:
 		with multiprocessing.Pool(cpu_num) as pool:
 
-			results = list(
-				tqdm(
-					pool.imap(pp_wrapper, sim_points, chunk_size),
-					total=len(sim_points)
+			if show_progress:
+				results = list(
+					tqdm(
+						pool.imap(pp_wrapper, sim_points, chunk_size),
+						total=len(sim_points)
+					)
 				)
-			)
+			else:
+				results = list(pool.imap(pp_wrapper, sim_points, chunk_size))
 
 		return np.array(results)
 
@@ -107,11 +111,10 @@ if __name__ == "__main__":
 
 	sucs_breakdown_time = mp_post_process(pp_wrapper, sucs_sim_points,\
 										  chunk_size=args.chunk_size,\
-										  cpu_num=args.cpu_num)
+										  cpu_num=args.cpu_num,\
+										  show_progress=True)
 	m_num = len(m_list)
 	sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
-
-	tmp = np.array(m_list).astype(np.float64)
 
 	if not save_root.exists():
 		save_root.mkdir()

@@ -11,3 +11,4 @@ Introducation
 
 - conda install conda-forge::pyvista
 - pip install "pyvista[jupyter]"
+- conda install conda-forge::scikit-learn
