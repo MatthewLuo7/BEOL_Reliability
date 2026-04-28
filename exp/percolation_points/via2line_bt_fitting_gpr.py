@@ -3,6 +3,7 @@ import numpy as np
 import pathlib
 import numpy as np
 from tqdm import tqdm
+import joblib
 
 from src.percolation.via2line import Via2LineSim_sumup_time_intervals_create_wrapper
 from src.distribution.weibull import weibull_convertion, fit_weibull, weibull_plot
@@ -24,8 +25,8 @@ save_root = pathlib.Path('./exp/percolation_points/gen_data/via2line_bt_fitting_
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='via2line_bt_fitting_gpr.py')
 	parser.add_argument('--vm-offset-list', nargs="+", type=float,
-						# default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5],
-						default=[1.0, 3.0, 5.0, 7.0],
+						default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5],
+						# default=[1.0, 3.0, 5.0, 7.0],
 						help='List of vm offset')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
 	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
@@ -180,7 +181,7 @@ if __name__ == "__main__":
 		axs[idx][0].set_xscale('log')
 		axs[idx][0].grid()
 		axs[idx][0].set_ylabel("Weibits")
-		axs[idx][0].set_xlabel("Defect Density")
+		axs[idx][0].set_xlabel("Breakdown Time")
 		axs[idx][0].set_ylim(weibits_min, weibits_max)
 		axs[idx][0].set_title(f"Exp and Fit Weibits")
 		sm = cm.ScalarMappable(cmap=cmap, norm=norm)
@@ -190,3 +191,6 @@ if __name__ == "__main__":
 		figs[idx].tight_layout()
 		figs[idx].savefig(save_path / f"m{m_list[idx]:.2f}_rN{radius_N:.2f}.png")
 		plt.close(figs[idx])
+
+		# save model
+		joblib.dump(wb_gprs[idx], save_path / f"weibull_gpr_m{m_list[idx]:.2f}_rN{radius_N:.2f}.pkl")
