@@ -152,5 +152,5 @@ if __name__ == "__main__":
 		weibull_plot(ax, sucs_breakdown_time[:, idx])
 		ax.set_xlabel('Breakdown Time')
 		ax.set_title(f'Breakdown Time Weibits')
-		fig4.savefig(save_path / f"defect_density_weibits_m{m:.2f}_rN{radius_N:.2f}.png")
+		fig4.savefig(save_path / f"breakdown_time_weibits_m{m:.2f}_rN{radius_N:.2f}.png")
 		plt.close(fig4)
