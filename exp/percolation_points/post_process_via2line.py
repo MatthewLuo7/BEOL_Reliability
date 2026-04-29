@@ -49,9 +49,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='post_process_via2line.py')
 	parser.add_argument('--vm-offset', type=float, default=4.0, help='Via misalignment, along the x dim')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
@@ -71,14 +71,14 @@ if __name__ == "__main__":
 
 	vm_offset = args.vm_offset
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
 
-	dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vx{via_dim_x:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
+	dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 
 	m_list = args.m_list
 	radius_N = args.radius_N
@@ -89,8 +89,8 @@ if __name__ == "__main__":
 
 	_, defect_num, _, sucs_sim_idxs, sucs_sim_points = load_sim_data(args=args)
 
-	V = (via_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
-		via_dim_x*line_dim_y*line_dim_z*2 - via_dim_x*via_dim_y*via_dim_z
+	V = (line_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
+		line_dim_x*line_dim_y*line_dim_z*2 - (max(line_dim_x+vm_offset, 0.) - max(vm_offset, 0.))*via_dim_y*via_dim_z
 	sucs_defect_num = [defect_num[idx] for idx in sucs_sim_idxs]
 	sucs_defect_density = np.array(sucs_defect_num).astype(np.float32) / V
 	pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
@@ -98,9 +98,9 @@ if __name__ == "__main__":
 					radius_N=radius_N,
 					vm_offset=vm_offset,
 					ll_space=ll_space,
-					via_dim_x=via_dim_x,	
 					via_dim_y=via_dim_y,	
 					via_dim_z=via_dim_z,
+					line_dim_x=line_dim_x,
 					line_dim_y=line_dim_y,
 					line_dim_z=line_dim_z,
 					radius=radius,

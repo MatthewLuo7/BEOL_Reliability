@@ -12,53 +12,8 @@ import matplotlib.cm as cm
 import matplotlib.colors as colors
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-from sklearn.gaussian_process import GaussianProcessRegressor
-from sklearn.gaussian_process.kernels import RBF, ConstantKernel, WhiteKernel
+from src.models.physics.local_percolation_gpr.model import WeibullGPR
 
-class WeibullGPR:
-	def __init__(self):
-		# kernel： constant × RBF + noise
-		kernel = (
-			ConstantKernel(1.0, (1e-3, 1e3)) *
-			RBF(length_scale=1.0, length_scale_bounds=(1e-2, 1e2))
-			+ WhiteKernel(noise_level=1e-6, noise_level_bounds=(1e-10, 1e-2))
-		)
-
-		# two independent GP
-		self.gp_beta = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=5)
-		self.gp_eta  = GaussianProcessRegressor(kernel=kernel, n_restarts_optimizer=5)
-
-	def fit(self, vl_space:np.array, beta:np.array, eta:np.array) -> None:
-		"""
-		vl_space: (N,)
-		beta:     (N,)
-		eta:      (N,)
-		"""
-		X = np.array(vl_space).reshape(-1, 1)
-
-		# log-domain to stablize values and avoid negative values
-		self.gp_beta.fit(X, np.log(beta))
-		self.gp_eta.fit(X, np.log(eta))
-
-	def predict(self, vl_query:np.array, return_std:bool=False):
-		"""
-		vl_query: (M,)
-		"""
-		Xq = np.array(vl_query).reshape(-1, 1)
-
-		if return_std:
-			log_beta, std_beta = self.gp_beta.predict(Xq, return_std=True)
-			log_eta,  std_eta  = self.gp_eta.predict(Xq, return_std=True)
-
-			beta = np.exp(log_beta)
-			eta  = np.exp(log_eta)
-
-			return beta, eta, std_beta, std_eta
-		else:
-			beta = np.exp(self.gp_beta.predict(Xq))
-			eta  = np.exp(self.gp_eta.predict(Xq))
-
-			return beta, eta
 
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='via2line_dd_weibit_gpr.py')
@@ -67,9 +22,9 @@ if __name__ == "__main__":
 						# default=[0.5, 1.5, 2.5, 3.5, 4.5, 5.5, 6.5, 7.5, 8.5],
 						help='List of vm offset')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
@@ -84,9 +39,9 @@ if __name__ == "__main__":
 	vm_offset_list = args.vm_offset_list
 
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
@@ -94,8 +49,8 @@ if __name__ == "__main__":
 	cmap = cm.turbo_r		# cm.viridis
 	norm = colors.Normalize(vmin=ll_space-vm_offset_list[-1], vmax=ll_space-vm_offset_list[0])
 
-	V = (via_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
-		via_dim_x*line_dim_y*line_dim_z*2 - via_dim_x*via_dim_y*via_dim_z
+	V = (line_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
+		line_dim_x*line_dim_y*line_dim_z*2 - (max(line_dim_x+vm_offset, 0.) - max(vm_offset, 0.))*via_dim_y*via_dim_z
 
 	fig, ax = plt.subplots(1, 3, figsize=(12, 4))
 

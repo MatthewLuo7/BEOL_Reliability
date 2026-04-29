@@ -125,9 +125,9 @@ if __name__ == "__main__":
 						default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5],
 						help='List of vm offset')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
@@ -142,9 +142,9 @@ if __name__ == "__main__":
 	vm_offset_list = args.vm_offset_list
 
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
@@ -152,8 +152,8 @@ if __name__ == "__main__":
 	cmap = cm.turbo_r		# cm.viridis
 	norm = colors.Normalize(vmin=ll_space-vm_offset_list[-1], vmax=ll_space-vm_offset_list[0])
 
-	V = (via_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
-		via_dim_x*line_dim_y*line_dim_z*2 - via_dim_x*via_dim_y*via_dim_z
+	V = (line_dim_x*2+ll_space) * line_dim_y * (line_dim_z + via_dim_z) -\
+		line_dim_x*line_dim_y*line_dim_z*2 - (max(line_dim_x+vm_offset, 0.) - max(vm_offset, 0.))*via_dim_y*via_dim_z
 
 	fig, ax = plt.subplots(figsize=(8, 5))
 

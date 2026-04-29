@@ -1,5 +1,4 @@
 import argparse
-import numpy as np
 import pathlib
 import numpy as np
 from tqdm import tqdm
@@ -7,10 +6,10 @@ import joblib
 
 from src.percolation.via2line import Via2LineSim_sumup_time_intervals_create_wrapper
 from src.distribution.weibull import weibull_convertion, fit_weibull, weibull_plot
+from src.models.physics.local_percolation_gpr.model import WeibullGPR
 
 from exp.percolation_points.plot_via2line import load_sim_data
 from exp.percolation_points.post_process_via2line import mp_post_process
-from exp.percolation_points.via2line_dd_weibit_gpr import WeibullGPR
 
 import os
 import matplotlib.pyplot as plt
@@ -29,9 +28,9 @@ if __name__ == "__main__":
 						# default=[1.0, 3.0, 5.0, 7.0],
 						help='List of vm offset')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
@@ -56,9 +55,9 @@ if __name__ == "__main__":
 
 	vm_offset_list = args.vm_offset_list
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
@@ -77,7 +76,7 @@ if __name__ == "__main__":
 
 	if not save_root.exists():
 		save_root.mkdir()
-	dir_name = f'll{ll_space:.2f}_vx{via_dim_x:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
+	dir_name = f'll{ll_space:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 	save_path = save_root / dir_name
 	if not save_path.exists():
 		save_path.mkdir()
@@ -98,9 +97,9 @@ if __name__ == "__main__":
 						radius_N=radius_N,
 						vm_offset=vm_offset,
 						ll_space=ll_space,
-						via_dim_x=via_dim_x,	
 						via_dim_y=via_dim_y,	
 						via_dim_z=via_dim_z,
+						line_dim_x=line_dim_x,
 						line_dim_y=line_dim_y,
 						line_dim_z=line_dim_z,
 						radius=radius,

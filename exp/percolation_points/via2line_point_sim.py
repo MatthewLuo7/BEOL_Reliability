@@ -9,9 +9,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='via2line_sim.py')
 	parser.add_argument('--vm-offset', type=float, default=4.0, help='Via misalignment, along the x dim')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
@@ -33,10 +33,10 @@ if __name__ == "__main__":
 		sim_res = Via2LineSim_simulation(
 					seed=args.randseq_entropy,
 					vm_offset=args.vm_offset,
-					ll_space=args.ll_space,
-					via_dim_x=args.via_dim_x,	
+					ll_space=args.ll_space,	
 					via_dim_y=args.via_dim_y,	
 					via_dim_z=args.via_dim_z,
+					line_dim_x=args.line_dim_x,
 					line_dim_y=args.line_dim_y,
 					line_dim_z=args.line_dim_z,
 					radius=args.radius,
@@ -52,9 +52,9 @@ if __name__ == "__main__":
 
 	vm_offset = args.vm_offset
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
@@ -69,19 +69,19 @@ if __name__ == "__main__":
 
 	sim_wrapper = Via2LineSim_create_wrapper(
 					vm_offset=vm_offset,
-					ll_space=ll_space,
-					via_dim_x=via_dim_x,	
+					ll_space=ll_space,	
 					via_dim_y=via_dim_y,	
 					via_dim_z=via_dim_z,
+					line_dim_x=line_dim_x,
 					line_dim_y=line_dim_y,
 					line_dim_z=line_dim_z,
 					radius=radius,
 					max_defects=max_defects,
 					rebuild_thresh=rebuild_thresh,
 					workers=workers)
-	sim_volume = (via_dim_x*2+ll_space)*line_dim_y*line_dim_z -\
-				 via_dim_x*line_dim_y*line_dim_z*2 -\
-				 via_dim_x*via_dim_y*via_dim_z
+	sim_volume = (line_dim_x*2+ll_space)*line_dim_y*line_dim_z -\
+				 line_dim_x*line_dim_y*line_dim_z*2 -\
+				 (max(line_dim_x+vm_offset, 0.) - max(vm_offset, 0.))*via_dim_y*via_dim_z
 
 	results = mc_simulate(sim_wrapper=sim_wrapper,
 						  sample_num=sample_num,
@@ -91,7 +91,7 @@ if __name__ == "__main__":
 	break_np, defect_np, points_np = results
 
 	if args.save_path is not None:
-		dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vx{via_dim_x:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
+		dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 		save_path = pathlib.Path(args.save_path) / dir_name
 		if not save_path.is_dir(): save_path.mkdir()
 

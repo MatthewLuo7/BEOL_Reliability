@@ -11,16 +11,16 @@ from exp.percolation_points.plot_line2line import plot_sphere
 def load_sim_data(args):
 	vm_offset = args.vm_offset
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
 
 	workers = 1
 
-	dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vx{via_dim_x:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
+	dir_name = f'vm{vm_offset:.2f}_ll{ll_space:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 	data_dir = data_root / dir_name
 
 	break_flag = np.load(data_dir / "break_flag.npy")
@@ -54,9 +54,9 @@ def rendering(args, seed:int):
 
 	vm_offset = args.vm_offset
 	ll_space = args.ll_space
-	via_dim_x = args.via_dim_x
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
+	line_dim_x = args.line_dim_x
 	line_dim_y = args.line_dim_y
 	line_dim_z = args.line_dim_z
 	radius = args.radius
@@ -79,9 +79,9 @@ def rendering(args, seed:int):
 						defect_points=points,
 						vm_offset=vm_offset,
 						ll_space=ll_space,
-						via_dim_x=via_dim_x,	
 						via_dim_y=via_dim_y,	
 						via_dim_z=via_dim_z,
+						line_dim_x=line_dim_x,
 						line_dim_y=line_dim_y,
 						line_dim_z=line_dim_z,
 						radius=radius,
@@ -98,11 +98,11 @@ def rendering(args, seed:int):
 	plotter = pv.Plotter()
 
 	# ---- cuboid ----
-	line_a = pv.Box(bounds=(0., via_dim_x, 0., line_dim_y, 0., line_dim_z))
+	line_a = pv.Box(bounds=(0., line_dim_x, 0., line_dim_y, 0., line_dim_z))
 	plotter.add_mesh(line_a, color='purple')
-	line_b = pv.Box(bounds=(via_dim_x+ll_space, via_dim_x+ll_space+via_dim_x, 0., line_dim_y, 0., line_dim_z))
+	line_b = pv.Box(bounds=(line_dim_x+ll_space, line_dim_x+ll_space+line_dim_x, 0., line_dim_y, 0., line_dim_z))
 	plotter.add_mesh(line_b, color='purple')
-	via = pv.Box(bounds=(vm_offset, vm_offset+via_dim_x, (line_dim_y - via_dim_y)/2, (line_dim_y - via_dim_y)/2 + via_dim_y, line_dim_z, line_dim_z + via_dim_z))
+	via = pv.Box(bounds=(max(vm_offset, 0.), max(vm_offset+line_dim_x, 0.), (line_dim_y - via_dim_y)/2, (line_dim_y - via_dim_y)/2 + via_dim_y, line_dim_z, line_dim_z + via_dim_z))
 	plotter.add_mesh(via, color='purple')
 
 	plot_sphere(plotter=plotter, points=perco_points, radius=radius)
@@ -118,9 +118,9 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='plot_via2line.py')
 	parser.add_argument('--vm-offset', type=float, default=4.0, help='Via misalignment, along the x dim')
 	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
-	parser.add_argument('--via-dim-x', type=float, default=10.5, help='Via size (x dim)')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
+	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
 	parser.add_argument('--line-dim-y', type=float, default=21.0, help='Line size (y dim)')
 	parser.add_argument('--line-dim-z', type=float, default=21.0, help='Line size (z dim)')
 	parser.add_argument('-r', '--radius', type=float, default=0.45, help='Radius of defects')
