@@ -1,5 +1,6 @@
 import argparse
 import pathlib
+import itertools
 import numpy as np
 from tqdm import tqdm
 import joblib
@@ -13,8 +14,6 @@ from exp.percolation_points.post_process_via2line import mp_post_process
 
 import os
 import matplotlib.pyplot as plt
-import matplotlib.cm as cm
-import matplotlib.colors as colors
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 data_root = pathlib.Path('./exp/percolation_points/gen_data/via2line/')
@@ -24,10 +23,11 @@ save_root = pathlib.Path('./exp/percolation_points/gen_data/via2line_bt_fitting_
 if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='via2line_bt_fitting_gpr.py')
 	parser.add_argument('--vm-offset-list', nargs="+", type=float,
-						default=[0.5, 1.0, 1.5, 2.0, 2.5, 3.0, 3.5, 4.0, 4.5, 5.0, 5.5, 6.0, 6.5, 7.0, 7.5, 8.0, 8.5],
-						# default=[1.0, 3.0, 5.0, 7.0],
+						default=[-6.0, -4.0, -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0],
 						help='List of vm offset')
-	parser.add_argument('--ll-space', type=float, default=10.5, help='Line-line spacing, along the x dim')
+	parser.add_argument('--ll-space-list', nargs="+", type=float,
+						default=[5.5, 6.5, 7.5, 8.5, 9.5, 10.5],
+						help='Line-line spacing, along the x dim')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
 	parser.add_argument('--line-dim-x', type=float, default=10.5, help='Line size (x dim)')
@@ -40,8 +40,7 @@ if __name__ == "__main__":
 
 	parser.add_argument('--max-defects', type=int, default=100000, help='The max allowed defects')
 	parser.add_argument('--rebuild-thresh', type=int, default=50, help='Iteration interval to rebuild KD-Tree')
-	parser.add_argument('--plot-sample-num', type=int, default=100, help='The number of dots for plotting')
-	parser.add_argument('--fit-sample-num', type=int, default=-1, help='The number of samples for fitting')
+	parser.add_argument('--conf-factor', type=float, default=2.0)
 
 	parser.add_argument('--chunk-size', type=int, default=4, help='Chunk size of simulations')
 	parser.add_argument('--cpu-num', type=int, default=-1, help='The number of CPUs')
@@ -51,10 +50,8 @@ if __name__ == "__main__":
 	args = parser.parse_args()
 	print(args)
 
-	rng = np.random.default_rng(args.seed)
-
 	vm_offset_list = args.vm_offset_list
-	ll_space = args.ll_space
+	ll_space_list = args.ll_space_list
 	via_dim_y = args.via_dim_y
 	via_dim_z = args.via_dim_z
 	line_dim_x = args.line_dim_x
@@ -69,127 +66,106 @@ if __name__ == "__main__":
 
 	max_defects = args.max_defects
 	rebuild_thresh = args.rebuild_thresh
-	plot_sample_num = args.plot_sample_num
-
-	cmap = cm.turbo_r		# cm.viridis
-	norm = colors.Normalize(vmin=ll_space-vm_offset_list[-1], vmax=ll_space-vm_offset_list[0])
 
 	if not save_root.exists():
 		save_root.mkdir()
-	dir_name = f'll{ll_space:.2f}_vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
+	dir_name = f'vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 	save_path = save_root / dir_name
 	if not save_path.exists():
 		save_path.mkdir()
 
-	figs, axs = zip(*[plt.subplots(1, 3, figsize=(12, 4)) for _ in range(m_num)])
 
-	vl_space_list = []
+	# ----------------- collect data -----------------
+	breakdown_time_list = []
+	x_list = []		# (vm_offset, ll_space)
 	beta_list = []
 	eta_list = []
 
-	for vm_offset in tqdm(vm_offset_list, total=len(vm_offset_list)):
+	for (vm_offset, ll_space) in itertools.product(vm_offset_list, ll_space_list):
 		args.vm_offset = vm_offset
+		args.ll_space = ll_space
 		vl_space = ll_space - vm_offset
 
-		_, _, _, _, sucs_sim_points = load_sim_data(args=args)
-		pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
-						m_np=np.array(m_list).astype(np.float64),
-						radius_N=radius_N,
-						vm_offset=vm_offset,
-						ll_space=ll_space,
-						via_dim_y=via_dim_y,	
-						via_dim_z=via_dim_z,
-						line_dim_x=line_dim_x,
-						line_dim_y=line_dim_y,
-						line_dim_z=line_dim_z,
-						radius=radius,
-						max_defects=max_defects,
-						rebuild_thresh=rebuild_thresh,
-						workers=workers,
-						verify=args.verify)
+		try:
+			_, _, _, _, sucs_sim_points = load_sim_data(args=args)
+			pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
+							m_np=np.array(m_list).astype(np.float64),
+							radius_N=radius_N,
+							vm_offset=vm_offset,
+							ll_space=ll_space,
+							via_dim_y=via_dim_y,	
+							via_dim_z=via_dim_z,
+							line_dim_x=line_dim_x,
+							line_dim_y=line_dim_y,
+							line_dim_z=line_dim_z,
+							radius=radius,
+							max_defects=max_defects,
+							rebuild_thresh=rebuild_thresh,
+							workers=workers,
+							verify=args.verify)
+	
+			sucs_breakdown_time = mp_post_process(pp_wrapper, sucs_sim_points,\
+												  chunk_size=args.chunk_size,\
+												  cpu_num=args.cpu_num,\
+												  show_progress=False)
+			sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
+	
+			betas, etas = zip(*[fit_weibull(data=sucs_breakdown_time[:, idx]) for idx in range(m_num)])
+			x_list.append([vl_space, ll_space])
+			beta_list.append(betas)
+			eta_list.append(etas)
+			breakdown_time_list.append(sucs_breakdown_time)
+		except:
+			continue
 
-		sucs_breakdown_time = mp_post_process(pp_wrapper, sucs_sim_points[:args.fit_sample_num],\
-											  chunk_size=args.chunk_size,\
-											  cpu_num=args.cpu_num,\
-											  show_progress=False)
-		
-		sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
 
-		# scatter dots
-		N = sucs_breakdown_time.shape[0]
-		rand_idxs = rng.integers(0, N, size=plot_sample_num)
-		for idx in range(m_num):
-			# convert to weibits
-			data_sorted, _, weibits = weibull_convertion(data=sucs_breakdown_time[:, idx])
-			# scatter data
-			axs[idx][0].scatter(data_sorted[rand_idxs], weibits[rand_idxs], label=f'exp vl={vl_space:.2f} nm', color=cmap(norm(vl_space)), s=5)
-
-		betas, etas = zip(*[fit_weibull(data=sucs_breakdown_time[:, idx]) for idx in range(m_num)])
-		vl_space_list.append(vl_space)
-		beta_list.append(betas)
-		eta_list.append(etas)
-
-	vl_space_np = np.array(vl_space_list)
+	x_np = np.array(x_list).reshape(-1, 2)
 	beta_np = np.array(beta_list).reshape(-1, m_num)
 	eta_np = np.array(eta_list).reshape(-1, m_num)
 
-	vl_linspace = np.linspace(0., 10., 100)
-	wb_gprs = [WeibullGPR() for _ in range(m_num)]
+	vl = np.linspace(0., 22., 100)
+	ll = np.linspace(5., 12., 100)
+
+	VL, LL = np.meshgrid(vl, ll)
+	mask = VL <= (LL + 6)
+
+	# wb_gprs = [WeibullGPR() for _ in range(m_num)]
 	weibits_min, weibits_max = -6, 3
 	for idx in range(m_num):
-		wb_gprs[idx].fit(vl_space_np, beta_np[:, idx], eta_np[:, idx])	
-		beta_pd, eta_pd, std_beta, std_eta = wb_gprs[idx].predict(vl_query=vl_linspace, return_std=True)
+		wb_gprs = WeibullGPR()
+		file_name = f"weibull_gpr_m{m_list[idx]:.2f}_rN{radius_N:.2f}"
+		wb_gprs.fit(x_np, beta_np[:, idx], eta_np[:, idx], train_save_path=save_path / (file_name + '.npz'))
 
-		axs[idx][1].plot(vl_linspace, beta_pd, label='mean')
-		axs[idx][1].plot(vl_linspace, beta_pd + 3*std_beta, label='upper', ls='--')
-		axs[idx][1].plot(vl_linspace, beta_pd - 3*std_beta, label='lower', ls='--')
-		axs[idx][1].grid()
-		axs[idx][1].set_ylabel("Beta")
-		axs[idx][1].set_xlabel("Via-Line Space (nm)")
-		axs[idx][1].set_title("GP Regression for Beta")
-		axs[idx][1].legend()
+		x_pred = np.stack([vl.ravel(), ll.ravel()], axis=1)
+		beta, eta = wb_gprs[idx].predict(X=x_pred, verbose=True, conf_factor=args.conf_factor)
 
-		axs[idx][2].plot(vl_linspace, eta_pd, label='mean')
-		axs[idx][2].plot(vl_linspace, eta_pd + 3*std_eta, label='upper', ls='--')
-		axs[idx][2].plot(vl_linspace, eta_pd - 3*std_eta, label='lower', ls='--')
-		axs[idx][2].grid()
-		axs[idx][2].set_ylabel("Eta")
-		axs[idx][2].set_xlabel("Via-Line Space (nm)")
-		axs[idx][2].set_title("GP Regression for Eta")
-		axs[idx][2].legend()
+		beta_mean  = beta[0].reshape(VL.shape)
+		beta_lower = beta[1].reshape(VL.shape)
+		beta_upper = beta[2].reshape(VL.shape)
 
-		# fit curves
-		plot_Dmin, plot_Dmax = None, None
-		for vm_offset in vm_offset_list:
-			vl_space = ll_space - vm_offset
-			beta, eta = wb_gprs[idx].predict(vl_query=vl_space, return_std=False)
+		eta_mean  = eta[0].reshape(VL.shape)
+		eta_lower = eta[1].reshape(VL.shape)
+		eta_upper = eta[2].reshape(VL.shape)
 
-			Dmin = eta * (np.exp(weibits_min/beta))
-			Dmax = eta * (np.exp(weibits_max/beta))
-			if (plot_Dmin is None) or (plot_Dmax is None):
-				plot_Dmin = Dmin
-				plot_Dmax = Dmax
-			else:
-				plot_Dmin = min(plot_Dmin, Dmin)
-				plot_Dmax = max(plot_Dmax, Dmax)
+		fig = plt.figure(figsize=(9, 4))
+		ax1 = fig.add_subplot(1, 2, 1, projection='3d')
+		ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-			D_ls = np.linspace(start=Dmin, stop=Dmax, num=100)
-			fit_weibits = beta * (np.log(D_ls) - np.log(eta))
-			axs[idx][0].plot(D_ls, fit_weibits, label=f'fit vl={vl_space:.2f} nm', color=cmap(norm(vl_space)))
+		ax1.plot_surface(VL, LL, beta_mean, alpha=0.8, legend='mean')
+		ax1.plot_surface(VL, LL, beta_lower, alpha=0.3, legend='lower')
+		ax1.plot_surface(VL, LL, beta_upper, alpha=0.3, legend='upper')
+		ax1.set_xlabel("vl_space")
+		ax1.set_ylabel("ll_space")
+		ax1.set_title(f"Weibull beta surface with ±{args.conf_factor}σ uncertainty")
+		ax1.legend()
 
-		axs[idx][0].set_xscale('log')
-		axs[idx][0].grid()
-		axs[idx][0].set_ylabel("Weibits")
-		axs[idx][0].set_xlabel("Breakdown Time")
-		axs[idx][0].set_ylim(weibits_min, weibits_max)
-		axs[idx][0].set_title(f"Exp and Fit Weibits")
-		sm = cm.ScalarMappable(cmap=cmap, norm=norm)
-		sm.set_array([])
-		cbar = figs[idx].colorbar(sm, ax=axs[idx][0])
-		cbar.set_label("vl space (nm)")
-		figs[idx].tight_layout()
-		figs[idx].savefig(save_path / f"m{m_list[idx]:.2f}_rN{radius_N:.2f}.png")
-		plt.close(figs[idx])
-
-		# save model
-		joblib.dump(wb_gprs[idx], save_path / f"weibull_gpr_m{m_list[idx]:.2f}_rN{radius_N:.2f}.pkl")
+		ax2.plot_surface(VL, LL, eta_mean, alpha=0.8, legend='mean')
+		ax2.plot_surface(VL, LL, eta_lower, alpha=0.3, legend='lower')
+		ax2.plot_surface(VL, LL, eta_upper, alpha=0.3, legend='upper')
+		ax2.set_xlabel("vl_space")
+		ax2.set_ylabel("ll_space")
+		ax2.set_title(f"Weibull eta surface with ±{args.conf_factor}σ uncertainty")
+		ax1.legend()
+		
+		figs.savefig(save_path / f"m{m_list[idx]:.2f}_rN{radius_N:.2f}.png")
+		plt.close(fig)
