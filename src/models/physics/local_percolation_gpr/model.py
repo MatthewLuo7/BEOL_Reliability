@@ -138,18 +138,19 @@ class WeibullGPR:
 			log_beta, std_beta = self.gp_beta.predict(X, return_std=True)
 			log_eta,  std_eta  = self.gp_eta.predict(X, return_std=True)
 
-			log_beta = np.expand_dim(log_beta, axis=-1)
-			log_eta = np.expand_dim(log_eta, axis=-1)
+			log_beta = np.expand_dims(log_beta, axis=-1)
+			std_beta = np.expand_dims(std_beta, axis=-1)
+			log_eta = np.expand_dims(log_eta, axis=-1)
+			std_eta = np.expand_dims(std_eta, axis=-1)
 
-			log_beta_itv = np.array([0., -std_beta, std_beta]) * conf_factor
-			log_eta_itv = np.array([0., -std_eta, std_eta]) * conf_factor
-
-			log_beta += log_beta_itv
-			log_eta += log_eta_itv
+			log_beta_lower = log_beta - std_beta * conf_factor
+			log_beta_upper = log_beta + std_beta * conf_factor
+			log_eta_lower = log_eta - std_eta * conf_factor
+			log_eta_upper = log_eta + std_eta * conf_factor
 
 			return (
-				np.exp(log_beta),
-				np.exp(log_eta),
+				np.exp(np.stack([log_beta, log_beta_lower, log_beta_upper], axis=-1)),
+				np.exp(np.stack([log_eta, log_eta_lower, log_eta_upper], axis=-1)),
 			)
 		else:
 			return (

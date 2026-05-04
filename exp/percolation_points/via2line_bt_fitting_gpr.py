@@ -24,9 +24,11 @@ if __name__ == "__main__":
 	parser = argparse.ArgumentParser(prog='via2line_bt_fitting_gpr.py')
 	parser.add_argument('--vm-offset-list', nargs="+", type=float,
 						default=[-6.0, -4.0, -2.0, 0.0, 2.0, 4.0, 6.0, 8.0, 10.0],
+						# default=[0.0, 2.0],
 						help='List of vm offset')
 	parser.add_argument('--ll-space-list', nargs="+", type=float,
 						default=[5.5, 6.5, 7.5, 8.5, 9.5, 10.5],
+						# default=[5.5],
 						help='Line-line spacing, along the x dim')
 	parser.add_argument('--via-dim-y', type=float, default=10.5, help='Via size (y dim)')
 	parser.add_argument('--via-dim-z', type=float, default=21.0, help='Via size (z dim)')
@@ -46,7 +48,7 @@ if __name__ == "__main__":
 	parser.add_argument('--cpu-num', type=int, default=-1, help='The number of CPUs')
 	parser.add_argument('--verbose', action='store_true')
 	parser.add_argument('--verify', action='store_true', help='Verify breakdown')
-	parser.add_argument('--seed', type=int, default=73)
+	parser.add_argument('--reload-breakdown-time', action='store_true')
 	args = parser.parse_args()
 	print(args)
 
@@ -63,6 +65,7 @@ if __name__ == "__main__":
 	m_list = args.m_list
 	radius_N = args.radius_N
 	m_num = len(m_list)
+	m_np = np.array(m_list)
 
 	max_defects = args.max_defects
 	rebuild_thresh = args.rebuild_thresh
@@ -71,13 +74,16 @@ if __name__ == "__main__":
 		save_root.mkdir()
 	dir_name = f'vy{via_dim_y:.2f}_vz{via_dim_z:.2f}_lx{line_dim_x:.2f}_ly{line_dim_y:.2f}_lz{line_dim_z:.2f}_r{radius:.2f}'
 	save_path = save_root / dir_name
-	if not save_path.exists():
-		save_path.mkdir()
+	if not save_path.exists(): save_path.mkdir()
+	bt_save_path = save_path / 'breakdown_time'
+	if not bt_save_path.exists(): bt_save_path.mkdir()
+	db_save_path = save_path / 'distribution'
+	if not db_save_path.exists(): db_save_path.mkdir()
 
 
 	# ----------------- collect data -----------------
 	breakdown_time_list = []
-	x_list = []		# (vm_offset, ll_space)
+	x_list = []		# (vl_space, ll_space)
 	beta_list = []
 	eta_list = []
 
@@ -87,28 +93,46 @@ if __name__ == "__main__":
 		vl_space = ll_space - vm_offset
 
 		try:
-			_, _, _, _, sucs_sim_points = load_sim_data(args=args)
-			pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
-							m_np=np.array(m_list).astype(np.float64),
-							radius_N=radius_N,
-							vm_offset=vm_offset,
-							ll_space=ll_space,
-							via_dim_y=via_dim_y,	
-							via_dim_z=via_dim_z,
-							line_dim_x=line_dim_x,
-							line_dim_y=line_dim_y,
-							line_dim_z=line_dim_z,
-							radius=radius,
-							max_defects=max_defects,
-							rebuild_thresh=rebuild_thresh,
-							workers=workers,
-							verify=args.verify)
-	
-			sucs_breakdown_time = mp_post_process(pp_wrapper, sucs_sim_points,\
-												  chunk_size=args.chunk_size,\
-												  cpu_num=args.cpu_num,\
-												  show_progress=False)
-			sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
+			bt_filename = f"vl{vl_space:.2f}_ll{ll_space:.2f}_rN{radius_N:.2f}.npz"
+			
+			try:
+				assert args.reload_breakdown_time
+				data = np.load(bt_save_path / bt_filename)
+				sucs_breakdown_time = data["sucs_breakdown_time"]
+				ld_m_np = data["m_np"]
+				assert np.power(ld_m_np - m_np, 2).sum() == 0.
+				print(f'Loaded breakdown time from {bt_save_path / bt_filename}')
+
+			except:
+				_, _, _, _, sucs_sim_points = load_sim_data(args=args)
+				pp_wrapper = Via2LineSim_sumup_time_intervals_create_wrapper(
+								m_np=m_np,
+								radius_N=radius_N,
+								vm_offset=vm_offset,
+								ll_space=ll_space,
+								via_dim_y=via_dim_y,	
+								via_dim_z=via_dim_z,
+								line_dim_x=line_dim_x,
+								line_dim_y=line_dim_y,
+								line_dim_z=line_dim_z,
+								radius=radius,
+								max_defects=max_defects,
+								rebuild_thresh=rebuild_thresh,
+								workers=workers,
+								verify=args.verify)
+		
+				sucs_breakdown_time = mp_post_process(pp_wrapper, sucs_sim_points,\
+													  chunk_size=args.chunk_size,\
+													  cpu_num=args.cpu_num,\
+													  show_progress=False)
+				sucs_breakdown_time = sucs_breakdown_time.reshape(-1, m_num)
+
+				np.savez(
+					bt_save_path / bt_filename,
+					sucs_breakdown_time=sucs_breakdown_time,
+					m_np=m_np
+				)
+
 	
 			betas, etas = zip(*[fit_weibull(data=sucs_breakdown_time[:, idx]) for idx in range(m_num)])
 			x_list.append([vl_space, ll_space])
@@ -129,43 +153,61 @@ if __name__ == "__main__":
 	VL, LL = np.meshgrid(vl, ll)
 	mask = VL <= (LL + 6)
 
-	# wb_gprs = [WeibullGPR() for _ in range(m_num)]
 	weibits_min, weibits_max = -6, 3
 	for idx in range(m_num):
-		wb_gprs = WeibullGPR()
+		wb_gpr = WeibullGPR()
 		file_name = f"weibull_gpr_m{m_list[idx]:.2f}_rN{radius_N:.2f}"
-		wb_gprs.fit(x_np, beta_np[:, idx], eta_np[:, idx], train_save_path=save_path / (file_name + '.npz'))
+		wb_gpr.fit(x_np, beta_np[:, idx], eta_np[:, idx], train_save_path=save_path / (file_name + '.npz'))
 
-		x_pred = np.stack([vl.ravel(), ll.ravel()], axis=1)
-		beta, eta = wb_gprs[idx].predict(X=x_pred, verbose=True, conf_factor=args.conf_factor)
+		x_pred = np.stack([VL.ravel(), LL.ravel()], axis=1)
+		beta, eta = wb_gpr.predict(X=x_pred, verbose=True, conf_factor=args.conf_factor)
 
-		beta_mean  = beta[0].reshape(VL.shape)
-		beta_lower = beta[1].reshape(VL.shape)
-		beta_upper = beta[2].reshape(VL.shape)
+		beta_mean  = beta[..., 0].reshape(VL.shape)
+		beta_lower = beta[..., 1].reshape(VL.shape)
+		beta_upper = beta[..., 2].reshape(VL.shape)
 
-		eta_mean  = eta[0].reshape(VL.shape)
-		eta_lower = eta[1].reshape(VL.shape)
-		eta_upper = eta[2].reshape(VL.shape)
+		eta_mean  = eta[..., 0].reshape(VL.shape)
+		eta_lower = eta[..., 1].reshape(VL.shape)
+		eta_upper = eta[..., 2].reshape(VL.shape)
 
 		fig = plt.figure(figsize=(9, 4))
 		ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 		ax2 = fig.add_subplot(1, 2, 2, projection='3d')
 
-		ax1.plot_surface(VL, LL, beta_mean, alpha=0.8, legend='mean')
-		ax1.plot_surface(VL, LL, beta_lower, alpha=0.3, legend='lower')
-		ax1.plot_surface(VL, LL, beta_upper, alpha=0.3, legend='upper')
+		ax1.plot_surface(VL, LL, beta_mean , alpha=0.8, color='green', label='mean')
+		ax1.plot_surface(VL, LL, beta_lower, alpha=0.3, color='red'  , label='lower')
+		ax1.plot_surface(VL, LL, beta_upper, alpha=0.3, color='blue' , label='upper')
 		ax1.set_xlabel("vl_space")
 		ax1.set_ylabel("ll_space")
 		ax1.set_title(f"Weibull beta surface with ±{args.conf_factor}σ uncertainty")
 		ax1.legend()
 
-		ax2.plot_surface(VL, LL, eta_mean, alpha=0.8, legend='mean')
-		ax2.plot_surface(VL, LL, eta_lower, alpha=0.3, legend='lower')
-		ax2.plot_surface(VL, LL, eta_upper, alpha=0.3, legend='upper')
+		ax2.plot_surface(VL, LL, eta_mean,  alpha=0.8, color='green', label='mean')
+		ax2.plot_surface(VL, LL, eta_lower, alpha=0.3, color='red'  , label='lower')
+		ax2.plot_surface(VL, LL, eta_upper, alpha=0.3, color='blue' , label='upper')
 		ax2.set_xlabel("vl_space")
 		ax2.set_ylabel("ll_space")
 		ax2.set_title(f"Weibull eta surface with ±{args.conf_factor}σ uncertainty")
-		ax1.legend()
+		ax2.legend()
 		
-		figs.savefig(save_path / f"m{m_list[idx]:.2f}_rN{radius_N:.2f}.png")
+		fig.savefig(save_path / f"m{m_list[idx]:.2f}_rN{radius_N:.2f}.png")
 		plt.close(fig)
+
+		# save distributions
+		dist_save_path = db_save_path / f"{m_list[idx]:.2f}_rN{radius_N:.2f}"
+		if not dist_save_path.exists(): dist_save_path.mkdir()
+		for j, (vl_space, ll_space) in enumerate(x_list):
+			fig, ax = plt.subplots(1, 2, figsize=(9, 4))
+			ax[0].hist(breakdown_time_list[j][:, idx], bins=200, density=True)
+			ax[0].grid()
+			ax[0].set_ylabel('Probability Density')
+			ax[0].set_xlabel('Breakdown Time')
+			ax[0].set_title(f'Breakdown Time Distribution')
+
+			weibull_plot(ax[1], breakdown_time_list[j][:, idx])
+			ax[1].set_xlabel('Breakdown Time')
+			ax[1].set_title(f'Breakdown Time Weibits')
+
+			fig.savefig(dist_save_path / f"vl{vl_space:.2f}_ll{ll_space:.2f}.png")
+			plt.tight_layout()
+			plt.close(fig)
