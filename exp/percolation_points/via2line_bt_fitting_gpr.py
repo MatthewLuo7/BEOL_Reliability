@@ -170,6 +170,14 @@ if __name__ == "__main__":
 		eta_lower = eta[..., 1].reshape(VL.shape)
 		eta_upper = eta[..., 2].reshape(VL.shape)
 
+		beta_mean[~mask]  = np.nan
+		beta_lower[~mask] = np.nan
+		beta_upper[~mask] = np.nan
+
+		eta_mean[~mask]  = np.nan
+		eta_lower[~mask] = np.nan
+		eta_upper[~mask] = np.nan
+
 		fig = plt.figure(figsize=(9, 4))
 		ax1 = fig.add_subplot(1, 2, 1, projection='3d')
 		ax2 = fig.add_subplot(1, 2, 2, projection='3d')
